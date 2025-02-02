@@ -1,7 +1,11 @@
 const { getUserVodka, updateUserVodka, checkCooldown } = require('../utils/userStorage');
 
-const getRandomAmount = () => {
-    // Случайное число от -5 до 5
+const getRandomAmount = (attempts) => {
+    if (attempts < 4) {
+        // Для первых 4 попыток: случайное число от 1 до 5
+        return Math.floor(Math.random() * 5) + 1;
+    }
+    // После 4 попыток: случайное число от -5 до 5
     return Math.floor(Math.random() * 11) - 5;
 };
 
@@ -35,7 +39,6 @@ module.exports = {
     description: 'Попытаться спиздить чекушки у дяди Вовы (раз в 6 часов)',
     execute: async (ctx) => {
         try {
-            // Получаем правильный ID пользователя
             const userId = ctx.from.id.toString();
             const username = ctx.from.username || 'anonymous';
             
@@ -47,16 +50,20 @@ module.exports = {
                 return ctx.reply(`Дядя Вова еще не забыл ваше лицо! Приходите через ${formatTimeLeft(cooldownCheck.timeLeft)}`);
             }
 
-            const amount = getRandomAmount();
-            console.log('Сгенерированное количество:', amount);
+            const attempts = cooldownCheck.attempts || 0; // Получаем количество попыток
+            const amount = getRandomAmount(attempts);
+            console.log('Сгенерированное количество:', amount, 'Попытка:', attempts);
             
             const currentAmount = await getUserVodka(userId);
             console.log('Текущее количество:', currentAmount);
             
-            const newTotal = await updateUserVodka(userId, amount, username);
+            // Проверяем, чтобы баланс не ушёл в минус
+            const finalAmount = amount < 0 && Math.abs(amount) > currentAmount ? -currentAmount : amount;
+            
+            const newTotal = await updateUserVodka(userId, finalAmount, username);
             console.log('Новое количество:', newTotal);
             
-            const message = getRandomMessage(amount, newTotal);
+            const message = getRandomMessage(finalAmount, newTotal);
             await ctx.reply(message);
         } catch (error) {
             console.error('Ошибка в команде vodka:', error);
