@@ -2,7 +2,7 @@ const { Sequelize } = require('sequelize');
 const Vodka = require('../models/Vodka');
 const sequelize = require('../config/database');
 
-const COOLDOWN_HOURS = 6;
+const COOLDOWN_HOURS = 24;
 const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
 
 // Простое хранилище данных пользователей
